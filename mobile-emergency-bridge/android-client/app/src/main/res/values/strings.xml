@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">VaultBridge</string>
+    <string name="service_running">VaultBridge Emergency Bridge Active</string>
+    <string name="service_desc">Listening securely for authorized remote emergency access</string>
+</resources>

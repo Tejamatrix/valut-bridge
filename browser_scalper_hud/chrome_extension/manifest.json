@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "BulletScalp Live HUD | Indian Stock & F&O Scalper",
+  "version": "2.0.0",
+  "description": "Live in-browser trading HUD for Zerodha Kite, Groww, Dhan, Angel One, Upstox, Fyers & TradingView. Detects live ticks, Nifty/BankNifty/Stocks, and alerts BUY CE, BUY PE, or HOLD with target/SL and explanations.",
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://kite.zerodha.com/*",
+        "*://*.groww.in/*",
+        "*://web.dhan.co/*",
+        "*://trade.angelone.in/*",
+        "*://*.angelone.in/*",
+        "*://pro.upstox.com/*",
+        "*://*.upstox.com/*",
+        "*://trade.fyers.in/*",
+        "*://shoonya.finvasia.com/*",
+        "*://in.tradingview.com/*",
+        "*://*.tradingview.com/*",
+        "*://*.quotex.com/*",
+        "*://*.pocketoption.com/*",
+        "*://*.olymptrade.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

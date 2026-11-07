@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BulletScalp Pro | Microstructure Trading Desk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap');
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background-color: #0b0e14;
+      color: #e2e8f0;
+    }
+    .neon-border-green { box-shadow: 0 0 15px rgba(34, 197, 94, 0.25); }
+    .neon-border-red { box-shadow: 0 0 15px rgba(239, 68, 68, 0.25); }
+    .neon-border-yellow { box-shadow: 0 0 15px rgba(234, 179, 8, 0.25); }
+    .depth-bar-bid { background: linear-gradient(90deg, rgba(34,197,94,0.18) 0%, rgba(34,197,94,0.35) 100%); }
+    .depth-bar-ask { background: linear-gradient(90deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.35) 100%); }
+  </style>
+</head>
+<body class="p-4 min-h-screen flex flex-col justify-between">
+
+  <!-- Header -->
+  <header class="flex flex-wrap items-center justify-between border-b border-gray-800 pb-3 mb-4">
+    <div class="flex items-center space-x-3">
+      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+      <h1 class="text-xl font-bold tracking-wider text-emerald-400">⚡ BULLET SCALPER PRO</h1>
+      <span class="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700">MICROSTRUCTURE ENGINE</span>
+      <span id="symbol-badge" class="text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2.5 py-0.5 rounded">BTCUSDT</span>
+    </div>
+    <div class="flex items-center space-x-6 text-sm">
+      <div>WS Latency: <span id="latency" class="font-bold text-emerald-400">-- ms</span></div>
+      <div>Mode: <span class="text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">PAPER SIMULATION</span></div>
+      <div id="clock" class="text-gray-400 text-xs">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
+    
+    <!-- LEFT COLUMN: L2 Depth Ladder & Metrics (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col space-y-4">
+      
+      <!-- Depth Ladder Card -->
+      <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-4 shadow-xl flex-grow">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Level 2 Depth Ladder</span>
+          <span class="text-xs text-gray-500">Top 5 Levels</span>
+        </div>
+        
+        <!-- Asks (Red) -->
+        <div class="space-y-1 mb-2">
+          <div class="grid grid-cols-3 text-xs text-gray-500 px-2 pb-1 border-b border-gray-800/80">
+            <span>PRICE (USDT)</span>
+            <span class="text-right">SIZE</span>
+            <span class="text-right">TOTAL</span>
+          </div>
+          <div id="asks-container" class="space-y-1">
+            <div class="text-center py-4 text-xs text-gray-600">Connecting to orderbook...</div>
+          </div>
+        </div>
+
+        <!-- Spread Divider -->
+        <div class="bg-gray-800/60 border-y border-amber-500/30 py-1.5 px-3 rounded my-2 flex justify-between items-center">
+          <span class="text-xs text-amber-400/80">SPREAD</span>
+          <div class="text-center">
+            <span id="spread-usd" class="text-sm font-bold text-amber-400">$0.00</span>
+            <span id="spread-bps" class="text-xs text-amber-500 ml-1">(0.00 bps)</span>
+          </div>
+          <span id="mid-price" class="text-xs text-gray-400">MID: $0.00</span>
+        </div>
+
+        <!-- Bids (Green) -->
+        <div class="space-y-1">
+          <div id="bids-container" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- Microstructure Gauges Card -->
+      <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-4 shadow-xl">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">Order Flow & Imbalance Analysis</span>
+        
+        <!-- OBI Gauge -->
+        <div class="mb-3">
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-gray-400">Order Book Imbalance (OBI)</span>
+            <span id="obi-val" class="font-bold text-emerald-400">0.0%</span>
+          </div>
+          <div class="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden flex">
+            <div id="obi-ask-bar" class="bg-rose-500 h-full w-1/2 transition-all duration-150"></div>
+            <div id="obi-bid-bar" class="bg-emerald-500 h-full w-1/2 transition-all duration-150"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-gray-500 mt-0.5">
+            <span>Ask Dominated (-100%)</span>
+            <span>0</span>
+            <span>Bid Dominated (+100%)</span>
+          </div>
+        </div>
+
+        <!-- Micro-Price & CVD Grid -->
+        <div class="grid grid-cols-2 gap-3 text-xs pt-1 border-t border-gray-800/80">
+          <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+            <div class="text-gray-400">Micro-Price Divergence</div>
+            <div id="micro-div" class="text-sm font-bold text-emerald-400 mt-0.5">+0.00 bps</div>
+            <div id="micro-price" class="text-[11px] text-gray-500">Lead: $0.00</div>
+          </div>
+          <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+            <div class="text-gray-400">15s Volume Delta (CVD)</div>
+            <div id="cvd-val" class="text-sm font-bold text-emerald-400 mt-0.5">+0.0000</div>
+            <div id="buy-ratio" class="text-[11px] text-gray-500">Buy Ratio: 50.0%</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Signal, Position, Performance & Logs (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col space-y-4">
+      
+      <!-- Real-time Signal Banner -->
+      <div id="signal-card" class="bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-xl transition-all">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Microstructure Scalping Signal</div>
+            <div class="flex items-center space-x-3">
+              <span id="signal-badge" class="px-4 py-1.5 rounded-md text-base font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                HOLD / SCANNING
+              </span>
+              <div class="text-sm">
+                Confidence: <span id="signal-confidence" class="font-bold text-white">0%</span>
+              </div>
+            </div>
+          </div>
+          <div id="signal-reasons" class="text-right text-xs text-gray-400 max-w-xs space-y-0.5">
+            Evaluating book queue...
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Position Panel -->
+      <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-4 shadow-xl">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Scalp Position</span>
+          <span id="pos-status-badge" class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">NO OPEN POSITION</span>
+        </div>
+        
+        <div id="pos-empty-view" class="text-center py-6 text-xs text-gray-500">
+          Waiting for high-confidence order book imbalance & volume delta breakout...
+        </div>
+
+        <div id="pos-active-view" class="hidden">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3">
+            <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+              <div class="text-gray-400">Entry Price</div>
+              <div id="pos-entry" class="text-sm font-bold text-white mt-0.5">$0.00</div>
+            </div>
+            <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+              <div class="text-gray-400">Current Price</div>
+              <div id="pos-current" class="text-sm font-bold text-white mt-0.5">$0.00</div>
+            </div>
+            <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+              <div class="text-gray-400">Unrealized PnL</div>
+              <div id="pos-pnl" class="text-sm font-bold text-emerald-400 mt-0.5">+$0.00 (0.00%)</div>
+            </div>
+            <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+              <div class="text-gray-400">Time In Scalp</div>
+              <div id="pos-time" class="text-sm font-bold text-amber-400 mt-0.5">0s / 90s</div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-3 gap-2 text-xs text-center">
+            <div class="p-1.5 rounded bg-emerald-950/40 border border-emerald-800/40 text-emerald-400">
+              TP Target: <span id="pos-tp" class="font-bold">$0.00</span>
+            </div>
+            <div class="p-1.5 rounded bg-rose-950/40 border border-rose-800/40 text-rose-400">
+              Hard SL: <span id="pos-sl" class="font-bold">$0.00</span>
+            </div>
+            <div class="p-1.5 rounded bg-blue-950/40 border border-blue-800/40 text-blue-400">
+              Trailing SL: <span id="pos-trail" class="font-bold">Armed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Stats -->
+      <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-4 shadow-xl">
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-3">Live Session Performance</span>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+            <div class="text-gray-400">Wallet Balance</div>
+            <div id="stat-balance" class="text-base font-bold text-white mt-0.5">$10,000.00</div>
+          </div>
+          <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+            <div class="text-gray-400">Net Realized PnL</div>
+            <div id="stat-pnl" class="text-base font-bold text-emerald-400 mt-0.5">+$0.00</div>
+          </div>
+          <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+            <div class="text-gray-400">Win Rate / Trades</div>
+            <div id="stat-winrate" class="text-base font-bold text-cyan-400 mt-0.5">0.0% (0)</div>
+          </div>
+          <div class="bg-gray-800/40 p-2.5 rounded border border-gray-800">
+            <div class="text-gray-400">Profit Factor / DD</div>
+            <div id="stat-pf" class="text-base font-bold text-white mt-0.5">0.00 / $0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit & Execution Log -->
+      <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-4 shadow-xl flex-grow">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Execution & Trigger Log</span>
+          <span class="text-xs text-gray-500">Real-time Stream</span>
+        </div>
+        <div id="logs-container" class="space-y-1 text-xs text-gray-400 font-mono overflow-y-auto max-h-36">
+          <div class="text-gray-600">Waiting for events...</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-4 pt-2 border-t border-gray-800 text-[11px] text-gray-500 flex justify-between items-center">
+    <div>BulletScalp High-Frequency Microstructure Engine • Powered by Bybit V5 Direct WebSocket</div>
+    <div class="text-gray-600">Built with Python Asyncio + orjson + TailwindCSS</div>
+  </footer>
+
+  <script>
+    // Clock
+    setInterval(() => {
+      document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0];
+    }, 1000);
+
+    // WebSocket Client
+    let ws;
+    function connectWS() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          updateUI(data);
+        } catch(e) {
+          console.error(e);
+        }
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWS, 1500);
+      };
+    }
+
+    function updateUI(data) {
+      // Latency & Symbol
+      document.getElementById('latency').innerText = `${data.latency_ms} ms`;
+      document.getElementById('symbol-badge').innerText = data.symbol;
+
+      const ob = data.orderbook || {};
+      const flow = data.flow || {};
+      const sig = data.signal || {};
+      const pos = data.position;
+      const perf = data.performance || {};
+
+      // 1. Order Book Asks & Bids
+      if (ob.asks && ob.asks.length > 0) {
+        const asksHtml = [...ob.asks].slice(0, 5).reverse().map(([price, size]) => `
+          <div class="grid grid-cols-3 text-xs px-2 py-0.5 rounded depth-bar-ask">
+            <span class="font-semibold text-rose-400">$${Number(price).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+            <span class="text-right text-gray-300">${Number(size).toFixed(4)}</span>
+            <span class="text-right text-gray-400">${(price * size).toFixed(0)}</span>
+          </div>
+        `).join('');
+        document.getElementById('asks-container').innerHTML = asksHtml;
+      }
+
+      if (ob.bids && ob.bids.length > 0) {
+        const bidsHtml = ob.bids.slice(0, 5).map(([price, size]) => `
+          <div class="grid grid-cols-3 text-xs px-2 py-0.5 rounded depth-bar-bid">
+            <span class="font-semibold text-emerald-400">$${Number(price).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+            <span class="text-right text-gray-300">${Number(size).toFixed(4)}</span>
+            <span class="text-right text-gray-400">${(price * size).toFixed(0)}</span>
+          </div>
+        `).join('');
+        document.getElementById('bids-container').innerHTML = bidsHtml;
+      }
+
+      // Spread & Mid
+      document.getElementById('spread-usd').innerText = `$${(ob.spread_usd || 0).toFixed(2)}`;
+      document.getElementById('spread-bps').innerText = `(${(ob.spread_bps || 0).toFixed(2)} bps)`;
+      document.getElementById('mid-price').innerText = `MID: $${Number(ob.mid_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+      // 2. Microstructure Metrics
+      const obi = ob.obi || 0;
+      const obiPct = (obi * 100).toFixed(1);
+      const obiElem = document.getElementById('obi-val');
+      obiElem.innerText = `${obi > 0 ? '+' : ''}${obiPct}%`;
+      obiElem.className = `font-bold ${obi > 0.2 ? 'text-emerald-400' : (obi < -0.2 ? 'text-rose-400' : 'text-gray-300')}`;
+
+      // Visual OBI balance bar
+      const bidWidth = Math.max(0, Math.min(100, (obi + 1.0) * 50));
+      const askWidth = 100 - bidWidth;
+      document.getElementById('obi-ask-bar').style.width = `${askWidth}%`;
+      document.getElementById('obi-bid-bar').style.width = `${bidWidth}%`;
+
+      // Micro-price divergence
+      const microDiv = ob.micro_div_bps || 0;
+      const mDivElem = document.getElementById('micro-div');
+      mDivElem.innerText = `${microDiv > 0 ? '+' : ''}${microDiv.toFixed(2)} bps`;
+      mDivElem.className = `text-sm font-bold ${microDiv > 0.4 ? 'text-emerald-400' : (microDiv < -0.4 ? 'text-rose-400' : 'text-gray-300')} mt-0.5`;
+      document.getElementById('micro-price').innerText = `Lead: $${Number(ob.micro_price || 0).toFixed(2)}`;
+
+      // CVD
+      const cvd = flow.cvd || 0;
+      const cvdElem = document.getElementById('cvd-val');
+      cvdElem.innerText = `${cvd > 0 ? '+' : ''}${cvd.toFixed(4)}`;
+      cvdElem.className = `text-sm font-bold ${cvd > 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`;
+      document.getElementById('buy-ratio').innerText = `Buy Ratio: ${((flow.buy_ratio || 0.5) * 100).toFixed(1)}%`;
+
+      // 3. Signal Card
+      const sigCard = document.getElementById('signal-card');
+      const sigBadge = document.getElementById('signal-badge');
+      const sigConf = document.getElementById('signal-confidence');
+      const sigReasons = document.getElementById('signal-reasons');
+
+      sigConf.innerText = `${sig.confidence || 0}%`;
+      sigReasons.innerHTML = (sig.reasons && sig.reasons.length > 0) ? sig.reasons.map(r => `<div>• ${r}</div>`).join('') : 'Equilibrium';
+
+      if (sig.action === 'BUY') {
+        sigBadge.className = 'px-4 py-1.5 rounded-md text-base font-extrabold bg-emerald-500 text-black shadow-lg shadow-emerald-500/30';
+        sigBadge.innerText = '⚡ BUY NOW';
+        sigCard.className = 'bg-gray-900 border border-emerald-500 rounded-lg p-4 shadow-xl neon-border-green';
+      } else if (sig.action === 'SELL') {
+        sigBadge.className = 'px-4 py-1.5 rounded-md text-base font-extrabold bg-rose-500 text-white shadow-lg shadow-rose-500/30';
+        sigBadge.innerText = '⚡ SELL / SHORT NOW';
+        sigCard.className = 'bg-gray-900 border border-rose-500 rounded-lg p-4 shadow-xl neon-border-red';
+      } else {
+        sigBadge.className = 'px-4 py-1.5 rounded-md text-base font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/40';
+        sigBadge.innerText = 'HOLD / SCANNING';
+        sigCard.className = 'bg-gray-900 border border-gray-800 rounded-lg p-4 shadow-xl';
+      }
+
+      // 4. Position Manager
+      const emptyView = document.getElementById('pos-empty-view');
+      const activeView = document.getElementById('pos-active-view');
+      const posBadge = document.getElementById('pos-status-badge');
+
+      if (pos) {
+        emptyView.classList.add('hidden');
+        activeView.classList.remove('hidden');
+        
+        posBadge.className = `text-xs px-2 py-0.5 rounded font-bold ${pos.side === 'LONG' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'}`;
+        posBadge.innerText = `ACTIVE ${pos.side}`;
+
+        document.getElementById('pos-entry').innerText = `$${pos.entry_price.toLocaleString()}`;
+        document.getElementById('pos-current').innerText = `$${pos.current_price.toLocaleString()}`;
+        
+        const pnlElem = document.getElementById('pos-pnl');
+        pnlElem.innerText = `${pos.unrealized_pnl_usd >= 0 ? '+' : ''}$${pos.unrealized_pnl_usd.toFixed(2)} (${pos.unrealized_pnl_pct.toFixed(2)}%)`;
+        pnlElem.className = `text-sm font-bold ${pos.unrealized_pnl_usd >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`;
+
+        document.getElementById('pos-time').innerText = `${pos.elapsed}s / 90s`;
+        document.getElementById('pos-tp').innerText = `$${pos.tp.toLocaleString()}`;
+        document.getElementById('pos-sl').innerText = `$${pos.sl.toLocaleString()}`;
+        document.getElementById('pos-trail').innerText = pos.trailing_active ? `$${pos.trailing_stop.toLocaleString()}` : 'Armed';
+
+      } else {
+        emptyView.classList.remove('hidden');
+        activeView.classList.add('hidden');
+        posBadge.className = 'text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded';
+        posBadge.innerText = 'NO OPEN POSITION';
+      }
+
+      // 5. Performance Stats
+      document.getElementById('stat-balance').innerText = `$${Number(perf.balance || 10000).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      
+      const pnl = perf.net_pnl_usd || 0;
+      const statPnl = document.getElementById('stat-pnl');
+      statPnl.innerText = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+      statPnl.className = `text-base font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} mt-0.5`;
+
+      document.getElementById('stat-winrate').innerText = `${perf.win_rate || 0}% (${perf.total_trades || 0})`;
+      document.getElementById('stat-pf').innerText = `${perf.profit_factor || 0} / $${(perf.max_drawdown_usd || 0).toFixed(2)}`;
+
+      // 6. Logs
+      if (data.logs && data.logs.length > 0) {
+        document.getElementById('logs-container').innerHTML = data.logs.map(l => `<div class="py-0.5">${l}</div>`).join('');
+      }
+    }
+
+    connectWS();
+  </script>
+</body>
+</html>

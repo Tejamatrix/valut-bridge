@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VaultBridge — Emergency Mobile Remote Bridge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            dark: {
+              900: '#0b0f19',
+              850: '#111827',
+              800: '#1e293b',
+              700: '#334155',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.05) 0%, transparent 40%),
+                  #0b0f19;
+      color: #f1f5f9;
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.5);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.4);
+    }
+  </style>
+</head>
+<body class="flex flex-col text-slate-200">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 p-0.5 shadow-lg shadow-indigo-500/20">
+          <div class="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-indigo-400"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-extrabold text-lg text-white tracking-tight">VaultBridge</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 tracking-wider uppercase">Emergency Mode</span>
+          </div>
+          <p class="text-xs text-slate-400">Remote Mobile File & Emergency Bridge</p>
+        </div>
+      </div>
+
+      <!-- Live Connection Pill -->
+      <div class="flex items-center space-x-3">
+        <div id="connectionPill" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs">
+          <span id="connIndicator" class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+          <span id="connLabel" class="text-slate-300 font-medium">Disconnected</span>
+        </div>
+
+        <button onclick="openPairingModal()" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-md shadow-indigo-600/20 transition">
+          <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+          <span>Device Pairing</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col space-y-6">
+
+    <!-- STATUS & QUICK METRICS BANNER -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      
+      <!-- Device Card -->
+      <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs text-slate-400 font-medium">Linked Phone</span>
+          <div id="statDeviceName" class="text-sm font-bold text-white truncate max-w-[160px]">Not Connected</div>
+          <div id="statDeviceID" class="text-[11px] font-mono text-slate-500">---</div>
+        </div>
+        <div class="p-3 bg-slate-800/80 rounded-xl text-indigo-400">
+          <i data-lucide="smartphone" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Battery Card -->
+      <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs text-slate-400 font-medium">Battery Status</span>
+          <div class="flex items-center space-x-2">
+            <span id="statBatteryLevel" class="text-lg font-bold text-white">--%</span>
+            <span id="statChargingBadge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hidden">Charging</span>
+          </div>
+          <div id="statBatteryHealth" class="text-[11px] text-slate-400">Health: --</div>
+        </div>
+        <div class="p-3 bg-slate-800/80 rounded-xl text-emerald-400">
+          <i data-lucide="battery-charging" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Network Card -->
+      <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-xs text-slate-400 font-medium">Connectivity</span>
+          <div id="statNetworkType" class="text-sm font-bold text-white truncate max-w-[160px]">--</div>
+          <div id="statSignal" class="text-[11px] text-slate-400">Signal: --</div>
+        </div>
+        <div class="p-3 bg-slate-800/80 rounded-xl text-sky-400">
+          <i data-lucide="wifi" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Emergency Siren Trigger -->
+      <div class="glass-card rounded-2xl p-4 flex items-center justify-between bg-gradient-to-r from-rose-950/20 to-slate-900 border-rose-900/30">
+        <div class="space-y-1">
+          <span class="text-xs text-rose-400 font-bold uppercase tracking-wider">Lost Phone?</span>
+          <div class="text-xs text-slate-400">Sound Max Alarm</div>
+          <button onclick="triggerEmergencyAlarm()" class="mt-1 flex items-center space-x-1.5 bg-rose-600 hover:bg-rose-500 text-white px-3 py-1 rounded-lg text-xs font-semibold shadow-lg shadow-rose-600/30 transition">
+            <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+            <span>Ring Siren</span>
+          </button>
+        </div>
+        <div class="p-3 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20 animate-pulse">
+          <i data-lucide="bell-ring" class="w-6 h-6"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TABS BAR -->
+    <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+      <button onclick="switchTab('explorer')" id="tabBtn-explorer" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition">
+        <i data-lucide="folder" class="w-4 h-4"></i>
+        <span>File Explorer</span>
+      </button>
+
+      <button onclick="switchTab('contacts')" id="tabBtn-contacts" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        <span>Emergency Contacts</span>
+      </button>
+
+      <button onclick="switchTab('sms')" id="tabBtn-sms" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="message-square" class="w-4 h-4"></i>
+        <span>2FA & SMS Codes</span>
+      </button>
+
+      <button onclick="switchTab('radar')" id="tabBtn-radar" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="map-pin" class="w-4 h-4"></i>
+        <span>Phone Radar & GPS</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: FILE EXPLORER CONTENT -->
+    <div id="tabContent-explorer" class="space-y-4">
+
+      <!-- QUICK SHORTCUTS & SEARCH -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <button onclick="navigateTo('/storage/emulated/0/Download')" class="glass-card hover:border-indigo-500/50 p-3 rounded-xl flex items-center space-x-3 text-left transition group">
+          <div class="p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-white">Downloads</div>
+            <div class="text-[10px] text-slate-400">Tickets, PDF, bills</div>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('/storage/emulated/0/Documents')" class="glass-card hover:border-emerald-500/50 p-3 rounded-xl flex items-center space-x-3 text-left transition group">
+          <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-white">Documents</div>
+            <div class="text-[10px] text-slate-400">Passports, contracts</div>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('/storage/emulated/0/WhatsApp/Media/WhatsApp Documents')" class="glass-card hover:border-emerald-500/50 p-3 rounded-xl flex items-center space-x-3 text-left transition group">
+          <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-white">WhatsApp Docs</div>
+            <div class="text-[10px] text-slate-400">Received agreements</div>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('/storage/emulated/0/DCIM/Camera')" class="glass-card hover:border-amber-500/50 p-3 rounded-xl flex items-center space-x-3 text-left transition group">
+          <div class="p-2.5 rounded-lg bg-amber-500/10 text-amber-400 group-hover:scale-105 transition">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-white">Camera & Photos</div>
+            <div class="text-[10px] text-slate-400">IDs, physical scans</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- SEARCH & FILTER TOOLBAR -->
+      <div class="glass-card p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+        
+        <!-- Breadcrumb Bar -->
+        <div class="flex items-center space-x-1.5 text-xs font-mono text-slate-300 overflow-x-auto max-w-full">
+          <button onclick="navigateTo('/storage/emulated/0')" class="hover:text-indigo-400 transition font-bold flex items-center space-x-1">
+            <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i>
+            <span>Internal Storage</span>
+          </button>
+          <span id="breadcrumbPath" class="text-slate-500 flex items-center"></span>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="flex items-center space-x-2 w-full md:w-auto">
+          <div class="relative flex-1 md:w-64">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input id="searchInput" type="text" placeholder="Search files across phone..." onkeydown="handleSearchKey(event)" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          </div>
+          
+          <select id="extFilter" onchange="applyExtFilter()" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500">
+            <option value="">All Files</option>
+            <option value=".pdf">PDF Only</option>
+            <option value=".docx">Word/Docs</option>
+            <option value=".jpg">Images</option>
+            <option value=".zip">Archives</option>
+          </select>
+
+          <button onclick="refreshCurrentDir()" title="Refresh" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- FILE LIST CONTAINER -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+        
+        <!-- Header -->
+        <div class="grid grid-cols-12 px-5 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800/80 bg-slate-900/50">
+          <div class="col-span-6 flex items-center space-x-2">Name</div>
+          <div class="col-span-2">Size</div>
+          <div class="col-span-2">Modified</div>
+          <div class="col-span-2 text-right">Actions</div>
+        </div>
+
+        <!-- Scrollable Rows -->
+        <div id="fileListBody" class="divide-y divide-slate-800/50 max-h-[480px] overflow-y-auto custom-scroll text-sm">
+          <div class="p-8 text-center text-slate-500 space-y-2">
+            <i data-lucide="loader" class="w-6 h-6 mx-auto animate-spin text-slate-400"></i>
+            <p>Connecting to phone to list files...</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 2: EMERGENCY CONTACTS -->
+    <div id="tabContent-contacts" class="space-y-4 hidden">
+      <div class="glass-card p-5 rounded-2xl flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-white">Emergency Contacts Extractor</h3>
+          <p class="text-xs text-slate-400">Quickly extract vital contact numbers from your phone if you are stranded or your phone is lost.</p>
+        </div>
+        <button onclick="downloadAllContactsVCF()" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-md transition">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Export All (.vcf / vCard)</span>
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden">
+        <div id="contactsListBody" class="divide-y divide-slate-800/60 max-h-[500px] overflow-y-auto custom-scroll">
+          <div class="p-8 text-center text-slate-500">
+            <i data-lucide="users" class="w-8 h-8 mx-auto text-slate-600 mb-2"></i>
+            <p>Loading phone contacts...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SMS & 2FA CODES -->
+    <div id="tabContent-sms" class="space-y-4 hidden">
+      <div class="glass-card p-5 rounded-2xl flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-white">SMS & 2-Factor Authentication Codes</h3>
+          <p class="text-xs text-slate-400">Retrieve banking OTPs, Google recovery codes, or important emergency text messages.</p>
+        </div>
+        <button onclick="requestSMSList()" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-md transition">
+          <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          <span>Fetch Recent SMS</span>
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden">
+        <div id="smsListBody" class="divide-y divide-slate-800/60 max-h-[500px] overflow-y-auto custom-scroll p-4 space-y-3">
+          <div class="p-8 text-center text-slate-500">
+            <p>Loading recent SMS verification codes...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PHONE RADAR & GPS -->
+    <div id="tabContent-radar" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Left details -->
+        <div class="space-y-4">
+          <div class="glass-card p-5 rounded-2xl space-y-3">
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <i data-lucide="navigation" class="w-4 h-4 text-indigo-400"></i>
+              <span>Live Phone Coordinates</span>
+            </h3>
+            
+            <div class="space-y-2 text-xs font-mono">
+              <div class="flex justify-between py-1 border-b border-slate-800">
+                <span class="text-slate-400">Latitude:</span>
+                <span id="locLat" class="text-white font-bold">--</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-slate-800">
+                <span class="text-slate-400">Longitude:</span>
+                <span id="locLng" class="text-white font-bold">--</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-slate-800">
+                <span class="text-slate-400">Accuracy:</span>
+                <span id="locAcc" class="text-emerald-400 font-bold">--</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-slate-800">
+                <span class="text-slate-400">Last Ping:</span>
+                <span id="locTime" class="text-slate-300">--</span>
+              </div>
+            </div>
+
+            <a id="locMapBtn" href="#" target="_blank" class="w-full mt-2 inline-flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-semibold transition">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span>Open in Google Maps</span>
+            </a>
+          </div>
+
+          <!-- Emergency Action Box -->
+          <div class="glass-card p-5 rounded-2xl border-rose-900/40 bg-rose-950/20 space-y-3">
+            <div class="flex items-center space-x-2 text-rose-400 font-bold text-sm">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              <span>Lost Device Assistance</span>
+            </div>
+            <p class="text-xs text-slate-300">If you dropped your phone nearby, sound an emergency alarm at 100% volume even if set to Silent or Do Not Disturb.</p>
+            <button onclick="triggerEmergencyAlarm()" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-rose-600/30 transition flex items-center justify-center space-x-2">
+              <i data-lucide="volume-2" class="w-4 h-4"></i>
+              <span>BLAST 100% VOLUME ALARM</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right map preview -->
+        <div class="md:col-span-2 glass-card p-4 rounded-2xl flex flex-col justify-between h-[420px] relative overflow-hidden bg-slate-950">
+          <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#4f46e5_1px,transparent_1px)] [background-size:16px_16px]"></div>
+          
+          <div class="relative z-10 flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">GPS Radar Grid</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono border border-emerald-500/20">LIVE LOCATION LOCK</span>
+          </div>
+
+          <div class="relative z-10 my-auto text-center space-y-2">
+            <div class="inline-block p-4 rounded-full bg-indigo-600/20 border border-indigo-500/40 animate-bounce">
+              <i data-lucide="map-pin" class="w-10 h-10 text-rose-500"></i>
+            </div>
+            <div id="radarAddress" class="text-sm font-semibold text-white">Locating device...</div>
+            <p class="text-xs text-slate-400">Coordinates verified via Android FusedLocation GPS provider</p>
+          </div>
+
+          <div class="relative z-10 text-right">
+            <button onclick="requestLocation()" class="text-xs text-indigo-400 hover:underline flex items-center space-x-1 ml-auto">
+              <i data-lucide="rotate-cw" class="w-3 h-3"></i>
+              <span>Refresh Coordinates</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PAIRING MODAL -->
+  <div id="pairingModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-slate-700 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl">
+            <i data-lucide="link" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Connect to Mobile</h3>
+            <p class="text-xs text-slate-400">Enter your Device PIN or ID</p>
+          </div>
+        </div>
+        <button onclick="closePairingModal()" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Quick 6-Digit PIN (Shown on Phone)</label>
+          <input id="inputPairingPin" type="text" placeholder="e.g. 784219" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono text-center tracking-widest focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="relative flex items-center justify-center my-2">
+          <div class="border-t border-slate-800 w-full"></div>
+          <span class="bg-slate-900 px-2 text-[10px] text-slate-500 uppercase font-mono tracking-wider absolute">OR CONNECT VIA DEVICE ID</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Device ID</label>
+          <input id="inputDeviceId" type="text" placeholder="e.g. pixel-8-pro-secure" value="pixel-8-pro-secure" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Master Emergency Secret Key</label>
+          <input id="inputSecretKey" type="password" placeholder="Emergency Key" value="emergency123" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <div class="pt-2 flex space-x-3">
+        <button onclick="closePairingModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl text-xs font-semibold transition">Cancel</button>
+        <button onclick="submitPairing()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 transition">Connect Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE DOWNLOAD PROGRESS MODAL -->
+  <div id="downloadModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-slate-700 shadow-2xl space-y-4">
+      <div class="flex items-center space-x-3">
+        <div class="p-3 bg-indigo-600/20 text-indigo-400 rounded-2xl animate-spin">
+          <i data-lucide="download" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-white">Extracting Emergency File</h4>
+          <p id="dlFileName" class="text-xs text-slate-400 truncate max-w-[280px]">filename.pdf</p>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs font-mono">
+          <span id="dlProgressText" class="text-slate-400">Receiving chunks: 0%</span>
+          <span id="dlSizeText" class="text-indigo-400 font-bold">0 / 0 KB</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+          <div id="dlProgressBar" class="bg-indigo-500 h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-slate-500 text-center">Transferring securely via encrypted stream directly from phone storage.</p>
+    </div>
+  </div>
+
+  <script>
+    // Lucide Icons initialization
+    lucide.createIcons();
+
+    // State
+    let ws = null;
+    let currentPath = '/storage/emulated/0';
+    let activeTab = 'explorer';
+    let activeDownloads = new Map(); // requestId -> { chunks: [], fileName, totalChunks, received }
+    let lastContacts = [];
+
+    const wsUrl = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+
+    function initWebSocket() {
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        updateConnStatus(false, 'Linking to Relay...');
+        // Try auto-connect with stored or default credentials
+        const savedId = localStorage.getItem('vb_deviceId') || 'pixel-8-pro-secure';
+        const savedKey = localStorage.getItem('vb_secretKey') || 'emergency123';
+        
+        ws.send(JSON.stringify({
+          type: 'connect_dashboard',
+          deviceId: savedId,
+          secretKey: savedKey
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleServerMessage(msg);
+        } catch (e) {
+          console.error('Parse error', e);
+        }
+      };
+
+      ws.onclose = () => {
+        updateConnStatus(false, 'Relay Disconnected. Reconnecting...');
+        setTimeout(initWebSocket, 3000);
+      };
+
+      ws.onerror = (err) => {
+        console.error('WebSocket Error', err);
+      };
+    }
+
+    function handleServerMessage(msg) {
+      const { type, action, status, data } = msg;
+
+      if (type === 'auth_success') {
+        updateConnStatus(true, `Connected: ${msg.deviceName}`);
+        document.getElementById('statDeviceName').innerText = msg.deviceName;
+        document.getElementById('statDeviceID').innerText = msg.deviceId;
+        closePairingModal();
+        // Request fresh directory & status
+        requestDirectory(currentPath);
+        return;
+      }
+
+      if (type === 'auth_failed') {
+        updateConnStatus(false, 'Auth Failed');
+        alert(msg.message || 'Authentication failed. Please verify Device PIN or Secret.');
+        openPairingModal();
+        return;
+      }
+
+      if (type === 'device_status_change' && msg.status === 'offline') {
+        updateConnStatus(false, 'Phone is Offline');
+        return;
+      }
+
+      // Handle Device Responses
+      if (type === 'response') {
+        if (action === 'get_status' && data) {
+          updateDeviceStatusView(data);
+        } else if (action === 'list_dir') {
+          renderDirectory(msg);
+        } else if (action === 'search_files') {
+          renderSearchResults(msg);
+        } else if (action === 'get_contacts') {
+          renderContacts(msg.contacts || []);
+        } else if (action === 'get_sms') {
+          renderSMS(msg.messages || []);
+        } else if (action === 'get_location') {
+          renderLocation(msg.location);
+        } else if (action === 'ring_alarm') {
+          alert('🚨 Siren Triggered: ' + msg.message);
+        }
+      }
+
+      // Handle File Download Streaming
+      if (type === 'download_start') {
+        startFileDownload(msg);
+      } else if (type === 'download_chunk') {
+        receiveFileChunk(msg);
+      } else if (type === 'download_complete') {
+        finalizeFileDownload(msg);
+      }
+    }
+
+    function updateConnStatus(connected, label) {
+      const pill = document.getElementById('connectionPill');
+      const ind = document.getElementById('connIndicator');
+      const lbl = document.getElementById('connLabel');
+
+      lbl.innerText = label;
+      if (connected) {
+        ind.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+        pill.className = 'flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300';
+      } else {
+        ind.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse';
+        pill.className = 'flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300';
+      }
+    }
+
+    function updateDeviceStatusView(data) {
+      if (data.deviceName) document.getElementById('statDeviceName').innerText = data.deviceName;
+      if (data.deviceId) document.getElementById('statDeviceID').innerText = data.deviceId;
+      
+      if (data.battery) {
+        document.getElementById('statBatteryLevel').innerText = `${data.battery.level}%`;
+        document.getElementById('statBatteryHealth').innerText = `Health: ${data.battery.health || 'Good'}`;
+        const chg = document.getElementById('statChargingBadge');
+        if (data.battery.isCharging) chg.classList.remove('hidden');
+        else chg.classList.add('hidden');
+      }
+
+      if (data.network) {
+        document.getElementById('statNetworkType').innerText = data.network.type;
+        document.getElementById('statSignal').innerText = `Signal: ${data.network.signalStrength}`;
+      }
+
+      if (data.location) {
+        renderLocation(data.location);
+      }
+    }
+
+    // ----------------------------------------------------
+    // FILE EXPLORER FUNCTIONS
+    // ----------------------------------------------------
+    function requestDirectory(path) {
+      currentPath = path;
+      updateBreadcrumbs(path);
+      const listBody = document.getElementById('fileListBody');
+      listBody.innerHTML = `
+        <div class="p-8 text-center text-slate-500 space-y-2">
+          <i data-lucide="loader" class="w-6 h-6 mx-auto animate-spin text-slate-400"></i>
+          <p>Browsing ${path}...</p>
+        </div>
+      `;
+      lucide.createIcons();
+
+      sendDeviceCommand({
+        action: 'list_dir',
+        path: path,
+        requestId: 'dir_' + Date.now()
+      });
+    }
+
+    function renderDirectory(msg) {
+      const listBody = document.getElementById('fileListBody');
+      if (msg.status !== 'ok' || !msg.items) {
+        listBody.innerHTML = `<div class="p-8 text-center text-rose-400">Failed to read directory: ${msg.message || 'Error'}</div>`;
+        return;
+      }
+
+      if (msg.items.length === 0) {
+        listBody.innerHTML = `<div class="p-8 text-center text-slate-500">Folder is empty</div>`;
+        return;
+      }
+
+      let html = '';
+
+      // Back button if not at root
+      if (currentPath !== '/storage/emulated/0') {
+        const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/')) || '/storage/emulated/0';
+        html += `
+          <div onclick="navigateTo('${parentPath}')" class="grid grid-cols-12 px-5 py-3 items-center hover:bg-slate-800/40 cursor-pointer text-slate-300 font-medium transition">
+            <div class="col-span-12 flex items-center space-x-2 text-indigo-400">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>.. (Parent Directory)</span>
+            </div>
+          </div>
+        `;
+      }
+
+      msg.items.forEach(item => {
+        const iconName = item.isDirectory ? 'folder' : getFileIcon(item.name);
+        const iconColor = item.isDirectory ? 'text-indigo-400' : 'text-slate-300';
+        const formattedSize = item.isDirectory ? '--' : formatBytes(item.size);
+        const dateStr = item.modified ? new Date(item.modified).toLocaleDateString() : '--';
+
+        html += `
+          <div class="grid grid-cols-12 px-5 py-3 items-center hover:bg-slate-800/50 transition group">
+            <div class="col-span-6 flex items-center space-x-3 overflow-hidden cursor-pointer" onclick="${item.isDirectory ? `navigateTo('${item.path}')` : `triggerFileDownload('${item.path}')`}">
+              <div class="p-2 rounded-lg bg-slate-800/80 ${iconColor}">
+                <i data-lucide="${iconName}" class="w-4 h-4"></i>
+              </div>
+              <span class="truncate text-slate-200 group-hover:text-indigo-400 transition font-medium">${item.name}</span>
+            </div>
+            <div class="col-span-2 text-xs text-slate-400 font-mono">${formattedSize}</div>
+            <div class="col-span-2 text-xs text-slate-400">${dateStr}</div>
+            <div class="col-span-2 text-right">
+              ${item.isDirectory ? `
+                <button onclick="navigateTo('${item.path}')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition">Open</button>
+              ` : `
+                <button onclick="triggerFileDownload('${item.path}')" class="px-2.5 py-1 text-xs bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg transition font-medium shadow flex items-center space-x-1 ml-auto">
+                  <i data-lucide="download" class="w-3 h-3"></i>
+                  <span>Download</span>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      listBody.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function navigateTo(path) {
+      requestDirectory(path);
+    }
+
+    function refreshCurrentDir() {
+      requestDirectory(currentPath);
+    }
+
+    function updateBreadcrumbs(path) {
+      const el = document.getElementById('breadcrumbPath');
+      const parts = path.replace(/^\/storage\/emulated\/0\/?/, '').split('/').filter(Boolean);
+      
+      let html = '';
+      let accum = '/storage/emulated/0';
+      parts.forEach(part => {
+        accum += '/' + part;
+        html += `
+          <span class="mx-1">/</span>
+          <button onclick="navigateTo('${accum}')" class="hover:text-indigo-400 transition text-slate-300">${part}</button>
+        `;
+      });
+      el.innerHTML = html;
+    }
+
+    function handleSearchKey(event) {
+      if (event.key === 'Enter') {
+        const query = document.getElementById('searchInput').value.trim();
+        const ext = document.getElementById('extFilter').value;
+        if (!query && !ext) {
+          refreshCurrentDir();
+          return;
+        }
+
+        const listBody = document.getElementById('fileListBody');
+        listBody.innerHTML = `
+          <div class="p-8 text-center text-slate-500 space-y-2">
+            <i data-lucide="loader" class="w-6 h-6 mx-auto animate-spin text-slate-400"></i>
+            <p>Searching storage for "${query}"...</p>
+          </div>
+        `;
+        lucide.createIcons();
+
+        sendDeviceCommand({
+          action: 'search_files',
+          query: query,
+          extension: ext,
+          requestId: 'search_' + Date.now()
+        });
+      }
+    }
+
+    function applyExtFilter() {
+      const query = document.getElementById('searchInput').value.trim();
+      const ext = document.getElementById('extFilter').value;
+      if (ext || query) {
+        sendDeviceCommand({
+          action: 'search_files',
+          query: query,
+          extension: ext,
+          requestId: 'search_' + Date.now()
+        });
+      } else {
+        refreshCurrentDir();
+      }
+    }
+
+    function renderSearchResults(msg) {
+      const listBody = document.getElementById('fileListBody');
+      if (!msg.results || msg.results.length === 0) {
+        listBody.innerHTML = `<div class="p-8 text-center text-slate-400">No matching files found for this search.</div>`;
+        return;
+      }
+
+      let html = `
+        <div class="px-5 py-2.5 bg-indigo-950/30 border-b border-indigo-900/40 text-xs text-indigo-300 flex items-center justify-between">
+          <span>Search Results: <strong>${msg.results.length}</strong> items found across phone</span>
+          <button onclick="refreshCurrentDir()" class="underline hover:text-white">Clear Search</button>
+        </div>
+      `;
+
+      msg.results.forEach(item => {
+        const iconName = getFileIcon(item.name);
+        const formattedSize = formatBytes(item.size);
+
+        html += `
+          <div class="grid grid-cols-12 px-5 py-3 items-center hover:bg-slate-800/50 transition group">
+            <div class="col-span-6 flex items-center space-x-3 overflow-hidden cursor-pointer" onclick="triggerFileDownload('${item.path}')">
+              <div class="p-2 rounded-lg bg-slate-800/80 text-indigo-400">
+                <i data-lucide="${iconName}" class="w-4 h-4"></i>
+              </div>
+              <div class="truncate">
+                <div class="text-slate-200 group-hover:text-indigo-400 transition font-medium">${item.name}</div>
+                <div class="text-[10px] text-slate-500 font-mono truncate">${item.path}</div>
+              </div>
+            </div>
+            <div class="col-span-2 text-xs text-slate-400 font-mono">${formattedSize}</div>
+            <div class="col-span-2 text-xs text-slate-400">${item.modified ? new Date(item.modified).toLocaleDateString() : '--'}</div>
+            <div class="col-span-2 text-right">
+              <button onclick="triggerFileDownload('${item.path}')" class="px-2.5 py-1 text-xs bg-indigo-600/80 hover:bg-indigo-600 text-white rounded-lg transition font-medium shadow flex items-center space-x-1 ml-auto">
+                <i data-lucide="download" class="w-3 h-3"></i>
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      listBody.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // FILE STREAMING & DOWNLOAD ENGINE
+    // ----------------------------------------------------
+    function triggerFileDownload(filePath) {
+      const requestId = 'dl_' + Date.now();
+      showDownloadModal(filePath.split('/').pop());
+
+      sendDeviceCommand({
+        action: 'download_file',
+        filePath: filePath,
+        requestId: requestId
+      });
+    }
+
+    function showDownloadModal(fileName) {
+      document.getElementById('dlFileName').innerText = fileName;
+      document.getElementById('dlProgressBar').style.width = '0%';
+      document.getElementById('dlProgressText').innerText = 'Initializing stream...';
+      document.getElementById('dlSizeText').innerText = '0 KB';
+      document.getElementById('downloadModal').classList.remove('hidden');
+    }
+
+    function startFileDownload(msg) {
+      activeDownloads.set(msg.requestId, {
+        fileName: msg.fileName,
+        fileSize: msg.fileSize,
+        totalChunks: msg.totalChunks,
+        chunks: new Array(msg.totalChunks),
+        receivedChunks: 0
+      });
+      document.getElementById('dlSizeText').innerText = `0 / ${formatBytes(msg.fileSize)}`;
+    }
+
+    function receiveFileChunk(msg) {
+      const dl = activeDownloads.get(msg.requestId);
+      if (!dl) return;
+
+      dl.chunks[msg.chunkIndex] = msg.chunkBase64;
+      dl.receivedChunks++;
+
+      const percent = Math.round((dl.receivedChunks / dl.totalChunks) * 100);
+      document.getElementById('dlProgressBar').style.width = percent + '%';
+      document.getElementById('dlProgressText').innerText = `Extracting: ${percent}% (${dl.receivedChunks}/${dl.totalChunks} chunks)`;
+    }
+
+    function finalizeFileDownload(msg) {
+      const dl = activeDownloads.get(msg.requestId);
+      if (!dl) return;
+
+      document.getElementById('dlProgressText').innerText = 'Reconstructing binary file...';
+      document.getElementById('dlProgressBar').style.width = '100%';
+
+      setTimeout(() => {
+        // Reassemble base64 chunks
+        const byteArrays = [];
+        for (let i = 0; i < dl.chunks.length; i++) {
+          const byteCharacters = atob(dl.chunks[i]);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let j = 0; j < byteCharacters.length; j++) {
+            byteNumbers[j] = byteCharacters.charCodeAt(j);
+          }
+          byteArrays.push(new Uint8Array(byteNumbers));
+        }
+
+        const blob = new Blob(byteArrays, { type: 'application/octet-stream' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = msg.fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+
+        activeDownloads.delete(msg.requestId);
+        document.getElementById('downloadModal').classList.add('hidden');
+      }, 300);
+    }
+
+    // ----------------------------------------------------
+    // EMERGENCY CONTACTS
+    // ----------------------------------------------------
+    function requestContacts() {
+      sendDeviceCommand({ action: 'get_contacts', requestId: 'contacts_' + Date.now() });
+    }
+
+    function renderContacts(contacts) {
+      lastContacts = contacts;
+      const body = document.getElementById('contactsListBody');
+      if (contacts.length === 0) {
+        body.innerHTML = `<div class="p-8 text-center text-slate-400">No contacts retrieved.</div>`;
+        return;
+      }
+
+      let html = '';
+      contacts.forEach(c => {
+        html += `
+          <div class="p-4 flex items-center justify-between hover:bg-slate-800/40 transition">
+            <div class="flex items-center space-x-3">
+              <div class="h-10 w-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold">
+                ${c.name.charAt(0)}
+              </div>
+              <div>
+                <div class="text-sm font-semibold text-white">${c.name}</div>
+                <div class="text-xs text-slate-400 font-mono">${c.phone}</div>
+                ${c.email ? `<div class="text-[11px] text-slate-500">${c.email}</div>` : ''}
+              </div>
+            </div>
+            <a href="tel:${c.phone}" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold hover:bg-emerald-600 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+              <span>Call / Dial</span>
+            </a>
+          </div>
+        `;
+      });
+      body.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function downloadAllContactsVCF() {
+      if (!lastContacts || lastContacts.length === 0) {
+        alert('No contacts available to export yet.');
+        return;
+      }
+
+      let vcf = '';
+      lastContacts.forEach(c => {
+        vcf += `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL;TYPE=CELL:${c.phone}\nEMAIL:${c.email || ''}\nEND:VCARD\n`;
+      });
+
+      const blob = new Blob([vcf], { type: 'text/vcard' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Emergency_Contacts_${new Date().toISOString().slice(0, 10)}.vcf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ----------------------------------------------------
+    // SMS & 2FA CODES
+    // ----------------------------------------------------
+    function requestSMSList() {
+      sendDeviceCommand({ action: 'get_sms', requestId: 'sms_' + Date.now() });
+    }
+
+    function renderSMS(messages) {
+      const body = document.getElementById('smsListBody');
+      if (messages.length === 0) {
+        body.innerHTML = `<div class="p-8 text-center text-slate-400">No recent SMS messages found.</div>`;
+        return;
+      }
+
+      let html = '';
+      messages.forEach(m => {
+        // Look for 4-8 digit OTP code in text
+        const otpMatch = m.body.match(/\b\d{4,8}\b/);
+        const otp = otpMatch ? otpMatch[0] : null;
+
+        html += `
+          <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 hover:border-slate-700 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-indigo-400 flex items-center space-x-1">
+                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                <span>From: ${m.from}</span>
+              </span>
+              <span class="text-[11px] text-slate-500">${m.time}</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed font-sans">${m.body}</p>
+            ${otp ? `
+              <div class="pt-1 flex items-center justify-between border-t border-slate-800/80 mt-2">
+                <span class="text-[11px] text-slate-400">Detected Verification OTP:</span>
+                <button onclick="copyToClipboard('${otp}')" class="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-mono font-bold hover:bg-amber-500 hover:text-black transition flex items-center space-x-1">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>Copy OTP: ${otp}</span>
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      body.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // PHONE RADAR & GPS
+    // ----------------------------------------------------
+    function requestLocation() {
+      sendDeviceCommand({ action: 'get_location', requestId: 'loc_' + Date.now() });
+    }
+
+    function renderLocation(loc) {
+      if (!loc) return;
+      document.getElementById('locLat').innerText = loc.latitude;
+      document.getElementById('locLng').innerText = loc.longitude;
+      document.getElementById('locAcc').innerText = loc.accuracy || 'GPS Lock';
+      document.getElementById('locTime').innerText = new Date(loc.timestamp).toLocaleTimeString();
+      document.getElementById('radarAddress').innerText = loc.address || `Lat: ${loc.latitude}, Lng: ${loc.longitude}`;
+      
+      const mapBtn = document.getElementById('locMapBtn');
+      mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}`;
+    }
+
+    function triggerEmergencyAlarm() {
+      if (confirm('Ring Phone at 100% volume for 15 seconds?')) {
+        sendDeviceCommand({ action: 'ring_alarm', durationSec: 15, requestId: 'alarm_' + Date.now() });
+      }
+    }
+
+    // ----------------------------------------------------
+    // UTILS & GENERAL
+    // ----------------------------------------------------
+    function sendDeviceCommand(cmdObj) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('Not connected to relay server.');
+        return;
+      }
+      ws.send(JSON.stringify({
+        type: 'command',
+        ...cmdObj
+      }));
+    }
+
+    function switchTab(tabId) {
+      activeTab = tabId;
+      ['explorer', 'contacts', 'sms', 'radar'].forEach(t => {
+        const content = document.getElementById(`tabContent-${t}`);
+        const btn = document.getElementById(`tabBtn-${t}`);
+        if (t === tabId) {
+          content.classList.remove('hidden');
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 transition';
+        } else {
+          content.classList.add('hidden');
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 text-slate-400 hover:text-slate-200 transition';
+        }
+      });
+
+      if (tabId === 'contacts') requestContacts();
+      if (tabId === 'sms') requestSMSList();
+      if (tabId === 'radar') requestLocation();
+    }
+
+    function openPairingModal() {
+      document.getElementById('pairingModal').classList.remove('hidden');
+    }
+
+    function closePairingModal() {
+      document.getElementById('pairingModal').classList.add('hidden');
+    }
+
+    function submitPairing() {
+      const pin = document.getElementById('inputPairingPin').value.trim();
+      const devId = document.getElementById('inputDeviceId').value.trim();
+      const secret = document.getElementById('inputSecretKey').value.trim();
+
+      if (!pin && !devId) {
+        alert('Please enter either a 6-digit PIN or a Device ID.');
+        return;
+      }
+
+      if (devId) localStorage.setItem('vb_deviceId', devId);
+      if (secret) localStorage.setItem('vb_secretKey', secret);
+
+      ws.send(JSON.stringify({
+        type: 'connect_dashboard',
+        pairingPin: pin || undefined,
+        deviceId: devId || undefined,
+        secretKey: secret
+      }));
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      alert(`Copied: ${text}`);
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(name) {
+      const ext = name.split('.').pop().toLowerCase();
+      if (['pdf'].includes(ext)) return 'file-text';
+      if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) return 'file-lines';
+      if (['jpg', 'jpeg', 'png', 'webp', 'svg'].includes(ext)) return 'image';
+      if (['zip', 'rar', 'tar', 'gz'].includes(ext)) return 'archive';
+      if (['mp3', 'wav', 'm4a'].includes(ext)) return 'music';
+      if (['mp4', 'mkv', 'mov'].includes(ext)) return 'film';
+      return 'file';
+    }
+
+    // Initialize
+    initWebSocket();
+  </script>
+</body>
+</html>
