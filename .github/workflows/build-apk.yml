@@ -32,9 +32,23 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
-          gradle assembleDebug --stacktrace
+          gradle assembleDebug --stacktrace --no-daemon 2>&1 | tee /tmp/gradle_output.txt
+        continue-on-error: true
+
+      - name: Publish Build Result to Summary
+        run: |
+          echo "## Gradle Build Output" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 80 /tmp/gradle_output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          if grep -q "BUILD SUCCESSFUL" /tmp/gradle_output.txt; then
+            echo "Build successful!"
+          else
+            exit 1
+          fi
 
       - name: Upload APK Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: VaultBridge-Emergency-App
