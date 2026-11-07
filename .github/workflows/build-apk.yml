@@ -27,25 +27,23 @@ jobs:
           gradle-version: '8.6'
           cache-disabled: true
 
+      - name: Accept Android Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Build Debug APK
         working-directory: ./mobile-emergency-bridge/android-client
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
           gradle assembleDebug --stacktrace --no-daemon 2>&1 | tee /tmp/gradle_output.txt
-        continue-on-error: true
 
-      - name: Publish Build Result to Summary
-        run: |
-          echo "## Gradle Build Output" >> $GITHUB_STEP_SUMMARY
-          echo '```text' >> $GITHUB_STEP_SUMMARY
-          tail -n 80 /tmp/gradle_output.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          if grep -q "BUILD SUCCESSFUL" /tmp/gradle_output.txt; then
-            echo "Build successful!"
-          else
-            exit 1
-          fi
+      - name: Upload Build Log Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: /tmp/gradle_output.txt
 
       - name: Upload APK Artifact
         if: success()
