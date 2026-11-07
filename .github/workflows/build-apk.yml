@@ -36,18 +36,17 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
-          gradle assembleDebug --stacktrace --no-daemon 2>&1 | tee /tmp/gradle_output.txt
+          gradle assembleDebug --stacktrace --no-daemon
 
-      - name: Upload Build Log Artifact
-        if: always()
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VaultBridge-Emergency-App
+          path: mobile-emergency-bridge/android-client/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Build Log on Failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: gradle-build-log
           path: /tmp/gradle_output.txt
-
-      - name: Upload APK Artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: VaultBridge-Emergency-App
-          path: mobile-emergency-bridge/android-client/app/build/outputs/apk/debug/*.apk
