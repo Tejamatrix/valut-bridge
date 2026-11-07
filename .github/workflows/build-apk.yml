@@ -25,9 +25,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.6'
+          cache-disabled: true
 
       - name: Build Debug APK
         working-directory: ./mobile-emergency-bridge/android-client
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
           gradle assembleDebug --stacktrace
 
