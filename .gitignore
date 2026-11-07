@@ -1,0 +1,7 @@
+create/
+newbot/
+*.lnk
+*.url
+node_modules/
+.gradle/
+build/
