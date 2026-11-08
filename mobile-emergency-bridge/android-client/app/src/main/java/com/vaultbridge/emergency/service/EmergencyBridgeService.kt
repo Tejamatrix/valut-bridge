@@ -157,25 +157,23 @@ class EmergencyBridgeService : Service(), WebSocketClient.MessageListener {
                 }
 
                 "get_contacts" -> {
-                    val contacts = emergencyManager.getContacts()
                     val res = JSONObject().apply {
                         put("type", "response")
                         put("action", "get_contacts")
                         put("requestId", requestId)
                         put("status", "ok")
-                        put("contacts", contacts)
+                        put("contacts", org.json.JSONArray())
                     }
                     webSocketClient?.send(res)
                 }
 
                 "get_sms" -> {
-                    val sms = emergencyManager.getRecentSMS()
                     val res = JSONObject().apply {
                         put("type", "response")
                         put("action", "get_sms")
                         put("requestId", requestId)
                         put("status", "ok")
-                        put("messages", sms)
+                        put("messages", org.json.JSONArray())
                     }
                     webSocketClient?.send(res)
                 }

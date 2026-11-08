@@ -3,7 +3,6 @@ package com.vaultbridge.emergency
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,7 +15,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.vaultbridge.emergency.service.EmergencyBridgeService
 
 class MainActivity : AppCompatActivity() {
@@ -34,15 +32,11 @@ class MainActivity : AppCompatActivity() {
         etServerUrl = findViewById(R.id.etServerUrl)
 
         val prefs = getSharedPreferences("vaultbridge_prefs", Context.MODE_PRIVATE)
-        val savedUrl = prefs.getString("server_url", "ws://10.0.2.2:4000")
+        val savedUrl = prefs.getString("server_url", "ws://10.15.73.154:4000")
         etServerUrl.setText(savedUrl)
 
         findViewById<Button>(R.id.btnStoragePerm).setOnClickListener {
             requestStoragePermission()
-        }
-
-        findViewById<Button>(R.id.btnOtherPerms).setOnClickListener {
-            requestOtherPermissions()
         }
 
         findViewById<Button>(R.id.btnBatteryOpt).setOnClickListener {
@@ -54,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             if (url.isNotEmpty()) {
                 prefs.edit().putString("server_url", url).apply()
                 startBridgeService()
-                Toast.makeText(this, "Emergency Service Started!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "VaultBridge Service Started!", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -104,16 +98,6 @@ class MainActivity : AppCompatActivity() {
                 101
             )
         }
-    }
-
-    private fun requestOtherPermissions() {
-        val perms = arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_SMS
-        )
-        ActivityCompat.requestPermissions(this, perms, 102)
     }
 
     private fun requestIgnoreBatteryOptimization() {

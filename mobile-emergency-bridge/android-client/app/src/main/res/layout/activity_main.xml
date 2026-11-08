@@ -23,7 +23,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Remote Mobile Emergency Data Bridge"
+            android:text="Remote Mobile File &amp; Data Bridge"
             android:textColor="#94A3B8"
             android:textSize="14sp" />
 
@@ -70,7 +70,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="REQUIRED EMERGENCY PERMISSIONS"
+            android:text="REQUIRED PERMISSIONS"
             android:textColor="#94A3B8"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -84,20 +84,12 @@
             android:text="1. Grant All Files Access" />
 
         <Button
-            android:id="@+id/btnOtherPerms"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#4F46E5"
-            android:text="2. Grant SMS, Contacts &amp; GPS" />
-
-        <Button
             android:id="@+id/btnBatteryOpt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:backgroundTint="#334155"
-            android:text="3. Disable Battery Optimization" />
+            android:text="2. Disable Battery Optimization" />
 
         <!-- Relay Configuration -->
         <TextView
@@ -115,7 +107,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="#1E293B"
-            android:hint="Relay WebSocket URL (e.g. ws://192.168.1.5:4000)"
+            android:hint="Relay WebSocket URL (e.g. ws://10.15.73.154:4000)"
             android:padding="12dp"
             android:textColor="#FFFFFF"
             android:textColorHint="#64748B"
