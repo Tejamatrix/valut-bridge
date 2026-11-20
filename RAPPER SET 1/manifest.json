@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "GOD-X TOOLS [1000X APEX EDITION]",
+  "version": "11.0",
+  "description": "GOD-X 1000X Audio Injection, Siren & Peak Decibel Domination Engine for Discord",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": [
+    "*://*.discord.com/*",
+    "*://discord.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.discord.com/*",
+        "*://discord.com/*"
+      ],
+      "js": ["injector.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ]
+}

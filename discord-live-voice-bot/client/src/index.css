@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#0f1013] text-[#dbdee1] antialiased select-none min-h-screen overflow-x-hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+/* Custom Cyber & Discord Styled Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1e1f22;
+}
+::-webkit-scrollbar-thumb {
+  background: #3b3e45;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5865F2;
+}
